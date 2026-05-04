@@ -26,6 +26,7 @@ coverage:
 		--cov-config=.coveragerc \
 		--cov-report xml \
 		--cov-report term-missing:skip-covered \
+		--disable-socket --allow-unix-socket \
 		$(TEST_FILE)
 
 # Run middleware and agent tests with coverage report.

@@ -222,6 +222,14 @@ ban-relative-imports = "all"
 [tool.coverage.run]
 omit = ["tests/*"]
 
+[tool.coverage.report]
+fail_under = 70
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "@overload",
+]
+
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
 markers = [
