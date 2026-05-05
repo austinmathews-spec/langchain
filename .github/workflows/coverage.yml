@@ -1,0 +1,187 @@
+# Coverage CI workflow.
+#
+# Runs unit tests with coverage instrumentation for each first-party package
+# (libs/core, libs/langchain_v1, libs/langchain, libs/text-splitters) and
+# fails if the resulting line coverage drops below the threshold recorded in
+# `COVERAGE_BASELINE.md` (and pinned per package in `pyproject.toml` and
+# `.coveragerc`).
+#
+# Partner packages are not included here yet — many of their unit tests
+# require live API keys or running services (Chroma DB, Qdrant, Ollama
+# daemon, etc.). They will be added once we have a way to run them against
+# mocks/recorded cassettes in CI.
+
+name: "📈 Coverage"
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  UV_FROZEN: "true"
+  UV_NO_SYNC: "true"
+
+jobs:
+  coverage-core:
+    name: "Coverage: libs/core"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: "🐍 Set up Python + UV"
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: "3.12"
+          cache-suffix: coverage-core
+          working-directory: libs/core
+      - name: "📦 Install Test Dependencies"
+        shell: bash
+        working-directory: libs/core
+        run: uv sync --group test
+      - name: "🧪 Run Coverage"
+        shell: bash
+        working-directory: libs/core
+        run: |
+          uv run --no-sync --group test pytest \
+            --cov=langchain_core \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=xml:coverage.xml \
+            tests/unit_tests/
+      - name: "📊 Check Threshold"
+        shell: bash
+        working-directory: libs/core
+        run: uv run --no-sync --group test coverage report --fail-under=80
+      - name: "📤 Upload Coverage Report"
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: coverage-core
+          path: libs/core/coverage.xml
+          if-no-files-found: ignore
+
+  coverage-langchain-v1:
+    name: "Coverage: libs/langchain_v1"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: "🐍 Set up Python + UV"
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: "3.12"
+          cache-suffix: coverage-langchain-v1
+          working-directory: libs/langchain_v1
+      - name: "📦 Install Test Dependencies"
+        shell: bash
+        working-directory: libs/langchain_v1
+        run: uv sync --group test
+      - name: "🧪 Run Coverage"
+        shell: bash
+        working-directory: libs/langchain_v1
+        run: |
+          uv run --no-sync --group test pytest \
+            --cov=langchain \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=xml:coverage.xml \
+            tests/unit_tests/ \
+            --disable-socket --allow-unix-socket
+      - name: "📊 Check Threshold"
+        shell: bash
+        working-directory: libs/langchain_v1
+        run: uv run --no-sync --group test coverage report --fail-under=90
+      - name: "📤 Upload Coverage Report"
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: coverage-langchain-v1
+          path: libs/langchain_v1/coverage.xml
+          if-no-files-found: ignore
+
+  coverage-langchain:
+    name: "Coverage: libs/langchain"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: "🐍 Set up Python + UV"
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: "3.12"
+          cache-suffix: coverage-langchain
+          working-directory: libs/langchain
+      - name: "📦 Install Test Dependencies"
+        shell: bash
+        working-directory: libs/langchain
+        run: uv sync --group test
+      - name: "🧪 Run Coverage"
+        shell: bash
+        working-directory: libs/langchain
+        run: |
+          uv run --no-sync --group test pytest \
+            --cov=langchain_classic \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=xml:coverage.xml \
+            tests/unit_tests/ \
+            --disable-socket --allow-unix-socket
+      - name: "📊 Check Threshold"
+        shell: bash
+        working-directory: libs/langchain
+        run: uv run --no-sync --group test coverage report --fail-under=70
+      - name: "📤 Upload Coverage Report"
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: coverage-langchain
+          path: libs/langchain/coverage.xml
+          if-no-files-found: ignore
+
+  coverage-text-splitters:
+    name: "Coverage: libs/text-splitters"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: "🐍 Set up Python + UV"
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: "3.12"
+          cache-suffix: coverage-text-splitters
+          working-directory: libs/text-splitters
+      - name: "📦 Install Test Dependencies"
+        shell: bash
+        working-directory: libs/text-splitters
+        run: uv sync --group test
+      - name: "🧪 Run Coverage"
+        shell: bash
+        working-directory: libs/text-splitters
+        run: |
+          uv run --no-sync --group test pytest \
+            --cov=langchain_text_splitters \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=xml:coverage.xml \
+            tests/unit_tests/
+      - name: "📊 Check Threshold"
+        shell: bash
+        working-directory: libs/text-splitters
+        run: uv run --no-sync --group test coverage report --fail-under=75
+      - name: "📤 Upload Coverage Report"
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: coverage-text-splitters
+          path: libs/text-splitters/coverage.xml
+          if-no-files-found: ignore

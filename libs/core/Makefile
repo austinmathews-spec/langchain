@@ -1,4 +1,4 @@
-.PHONY: all format lint type test tests test_watch integration_tests help extended_tests check_version
+.PHONY: all format lint type test tests test_watch integration_tests help extended_tests check_version coverage
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -18,6 +18,13 @@ test tests:
 	-u LANGSMITH_TRACING \
 	-u LANGCHAIN_PROJECT \
 	uv run --group test pytest -n auto --benchmark-disable $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
+
+# Run unit tests and generate a coverage report.
+coverage:
+	uv run --group test pytest --cov=langchain_core \
+		--cov-report xml \
+		--cov-report term-missing:skip-covered \
+		$(TEST_FILE)
 
 test_watch:
 	env \
@@ -87,3 +94,4 @@ help:
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
 	@echo 'test_watch                   - run unit tests in watch mode'
+	@echo 'coverage                     - run unit tests and generate coverage report'

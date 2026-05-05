@@ -1,0 +1,11 @@
+[run]
+source = langchain_classic
+omit = tests/*
+
+[report]
+fail_under = 70
+show_missing = true
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    @overload
