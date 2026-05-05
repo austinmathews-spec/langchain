@@ -182,29 +182,75 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
 
     @override
     def mget(self, keys: Sequence[str]) -> list[V | None]:
+        """Get the values associated with the given keys.
+
+        Args:
+            keys: A sequence of string keys to look up in the store.
+
+        Returns:
+            A list of values associated with the keys. If a key is not found,
+            the corresponding value will be `None`.
+        """
         return [self.store.get(key) for key in keys]
 
     @override
     async def amget(self, keys: Sequence[str]) -> list[V | None]:
+        """Asynchronously get the values associated with the given keys.
+
+        Delegates to the synchronous `mget` implementation.
+
+        Args:
+            keys: A sequence of string keys to look up in the store.
+
+        Returns:
+            A list of values associated with the keys. If a key is not found,
+            the corresponding value will be `None`.
+        """
         return self.mget(keys)
 
     @override
     def mset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
+        """Set the given key-value pairs in the store.
+
+        Args:
+            key_value_pairs: A sequence of key-value pairs to store.
+        """
         for key, value in key_value_pairs:
             self.store[key] = value
 
     @override
     async def amset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
+        """Asynchronously set the given key-value pairs in the store.
+
+        Delegates to the synchronous `mset` implementation.
+
+        Args:
+            key_value_pairs: A sequence of key-value pairs to store.
+        """
         return self.mset(key_value_pairs)
 
     @override
     def mdelete(self, keys: Sequence[str]) -> None:
+        """Delete the given keys and their associated values from the store.
+
+        Keys that do not exist in the store are silently ignored.
+
+        Args:
+            keys: A sequence of string keys to delete.
+        """
         for key in keys:
             if key in self.store:
                 del self.store[key]
 
     @override
     async def amdelete(self, keys: Sequence[str]) -> None:
+        """Asynchronously delete the given keys and their associated values.
+
+        Delegates to the synchronous `mdelete` implementation.
+
+        Args:
+            keys: A sequence of string keys to delete.
+        """
         self.mdelete(keys)
 
     def yield_keys(self, *, prefix: str | None = None) -> Iterator[str]:
