@@ -10,8 +10,6 @@ from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
-    Awaitable,
-    Callable,
     Iterator,
 )
 from contextlib import AbstractAsyncContextManager
@@ -20,68 +18,12 @@ from typing import (
     Any,
     Generic,
     TypeVar,
-    cast,
     overload,
 )
 
 from typing_extensions import override
 
-from langchain_core._api.deprecation import deprecated
-
 T = TypeVar("T")
-
-_no_default = object()
-
-
-# https://github.com/python/cpython/blob/main/Lib/test/test_asyncgen.py#L54
-@deprecated(since="1.1.2", removal="2.0.0")
-def py_anext(
-    iterator: AsyncIterator[T], default: T | Any = _no_default
-) -> Awaitable[T | Any | None]:
-    """Pure-Python implementation of `anext()` for testing purposes.
-
-    Closely matches the builtin `anext()` C implementation.
-
-    Can be used to compare the built-in implementation of the inner coroutines machinery
-    to C-implementation of `__anext__()` and `send()` or `throw()` on the returned
-    generator.
-
-    Args:
-        iterator: The async iterator to advance.
-        default: The value to return if the iterator is exhausted.
-
-            If not provided, a `StopAsyncIteration` exception is raised.
-
-    Returns:
-        The next value from the iterator, or the default value if the iterator is
-            exhausted.
-
-    Raises:
-        TypeError: If the iterator is not an async iterator.
-    """
-    try:
-        __anext__ = cast(
-            "Callable[[AsyncIterator[T]], Awaitable[T]]", type(iterator).__anext__
-        )
-    except AttributeError as e:
-        msg = f"{iterator!r} is not an async iterator"
-        raise TypeError(msg) from e
-
-    if default is _no_default:
-        return __anext__(iterator)
-
-    async def anext_impl() -> T | Any:
-        try:
-            # The C code is way more low-level than this, as it implements
-            # all methods of the iterator protocol. In this implementation
-            # we're relying on higher-level coroutine concepts, but that's
-            # exactly what we want -- crosstest pure-Python high-level
-            # implementation and low-level C anext() iterators.
-            return await __anext__(iterator)
-        except StopAsyncIteration:
-            return default
-
-    return anext_impl()
 
 
 class NoLock:
