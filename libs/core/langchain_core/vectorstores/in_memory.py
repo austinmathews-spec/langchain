@@ -191,6 +191,27 @@ class InMemoryVectorStore(VectorStore):
         ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
+        """Add documents to the vector store, embedding them for later retrieval.
+
+        Each document's page content is embedded via the configured embedding model
+        and stored alongside its metadata. If explicit `ids` are not provided, the
+        `id` attribute of each `Document` is used; when neither is available a random
+        UUID is generated.
+
+        Args:
+            documents: Documents to add to the vector store.
+            ids: Optional list of IDs to associate with each document. Must be the
+                same length as `documents` when provided.
+            **kwargs: Additional keyword arguments (unused).
+
+        Returns:
+            List of IDs assigned to the added documents, in the same order as the
+            input.
+
+        Raises:
+            ValueError: If `ids` is provided and its length does not match the
+                number of documents.
+        """
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
